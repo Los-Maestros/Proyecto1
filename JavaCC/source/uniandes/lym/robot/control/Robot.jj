@@ -31,6 +31,8 @@ import java.awt.Point;
 import java.io.*;
 import java.util.Vector;
 import java.util.LinkedList;
+import java.util.*;
+import java.util.Arrays;
 
 @SuppressWarnings("serial")
 public class Robot 
@@ -44,7 +46,10 @@ public class Robot
 		world = (RobotWorldDec) w;	
 	}
 
-	String salida=new String();
+	String salida = "";
+	Map<String, Integer> Variables = new HashMap<>();
+	Map<String, ArrayList<String>> Functions = new HashMap<>();
+	// TODO: Añadir funciones o varibles que neceistes para evaluar el parser!!!
 }
 PARSER_END(Robot)
 
@@ -59,114 +64,294 @@ SKIP:
 TOKEN: /* Nombres de Comandos */
 {
 
-			<MOV:  "Mov">
-		| 	<RIGHT: "RIGHT">
-		| 	<PUT: "Put">
-		| 	<PICK: "Pick">
-		|  < POP: "Pop" >
-		|  <GO: "GO" >
-        |  < HOP:  "HOP" >		
-
+		  
+		// CAMBIOS AL PARSER NUEVOS TOKENS
+		// Definiciones
+          < DEFVAR: "defVar" >
+        | < DEFPROC: "defProc" >
+        // Comandos simples
+        | < JUMP: "jump">
+        | < WALK: "walk" >
+  		| < LEAP: "leap" >
+  		| < TURN: "turn" >
+  		| < TURNTO: "turnto" >
+  		| < DROP: "drop" >
+  		| < GET: "get" >
+  		| < GRAB: "grab" >
+  		| < LETGO: "letGo" >
+  		| < NOP: "nop" >
+  		// Direcciones
+  		| < CARDINALDIR: "north" | "south" | "west" | "east" >
+        | < DIRECTION: "right" | "left" >
+        | < WALKDIR: "front" | "back">
+        | < TURNDIR: "around" >
+  		// Estructuras
+  		| < IF: "if" >
+  		| < ELSE: "else" >
+  		| < WHILE: "while" >
+  		| < REPEAT: "repeat" >
+  		| < TIMES: "times" >
+  		// Condiciones
+  		| < FACING: "facing" >
+  		| < CAN: "can" >
+  		| < NOT: "not" >
+  		// TOKENS VIEJOS
+  		| <MOV:  "Mov">
+		| <RIGHT: "RightOld">
+		| <PUT: "Put">
+		| <PICK: "Pick">
+		| <POP: "Pop" >
+		| <GO: "GO" >
+        | < HOP:  "HOP" >
+        
+  		
 }
 
 TOKEN:
 {
-		<BALLOONS:  "BALLOONS" >
-		|	<CHIPS:     "CHIPS"  >	
-
+		  <BALLOONS:"BALLOONS">
+		| <CHIPS:"CHIPS">	
 }
 
 
 
 TOKEN :
 {
-		<NUM: (<DIGIT>)+ >
-		|  	<#DIGIT: ["0"-"9"] >
-        
+		<NUM: (<DIGIT>)+>
+		| <#DIGIT:["0"-"9"]>
+        | < NAME: ( <LETTER> ( <LETTER > | < NUM > )* ) >
+        | < #LETTER: ["A"-"Z"] >
 }
 
 
-
-	//boolean command(uniandes.lym.robot.view.Console sistema) :
-	boolean command(Console sistema):
-	{	
-		
-		int x,y;
-		salida=new String();	
-	}
-
+//boolean command(uniandes.lym.robot.view.Console sistema):
+boolean command(Console sistema):
+{}
+{
+	(
+	// CAMBIOS AL PARSER PARA NUEVAS FUNCIONES:
+	  VariableDefine(sistema)
+	| FunctionDefine(sistema)
+	| "{" Block(sistema) "}"
+	)+
 	
 	{
-		(		  (
-		   <RIGHT> "(" ")" {world.turnRight();salida = "Command: Turnright";}
-		| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "Command: Moveforward ";}  
-		| 	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "Command:Jumpforward ";}
-		| 	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "Command:GO ";}  
-		|  <PUT> "("  put() ")"					  			
-		|  <PICK> "(" get()  ")"	
-	    |  < POP > "(" x=num() ")" {world.popBalloons(x); salida = "Comando:  Pop";}
-		) ";" 
+	    try { Thread.sleep(900);
+   		} catch (InterruptedException e) {
+   		  System.err.format("IOException: %s%n", e);
+    	}		 
+		return true;
+	}
+	| <EOF> {return false;} 
+}
 
+void OldCommands(Console sistema):
+{
+  int x,y;
+  salida=new String();
+}
+{
+    (   <RIGHT> "()" {world.turnRight();salida = "\nCommand: Turnright";}
+	| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "\nCommand: Moveforward ";}  
+	|	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "\nCommand:Jumpforward ";}
+	|	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "\nCommand:GO ";}  
+	|   <PUT> "("  put() ")"					  			
+	|   <PICK> "(" get()  ")"	
+    |   < POP > "(" x=num() ")" {world.popBalloons(x); salida = "\nComando:  Pop";}) { sistema.printOutput(salida); }
+}
+
+// CAMBIOS AL PARSER PARA NUEVAS FUNCIONES:
+void Command(Console sistema):
+{
+  Token tDir;
+  Token tValue;
+  Token tValuex;
+  Token tValuey; 
+}
+{
+  (
+    // SIMPLE COMMANDS
+    < JUMP > "(" ( tValuex = < NUM > | tValuex = < NAME > ) "," (tValuey = < NUM > | tValuey = < NAME >) ")" {
+      // TODO: Ejemplo de como funcionarian las demas, tienes que buscar la funcion en el RobotWorld.java e implementarla
+      // aqui, ej world.setPosition sirve como jump y previene al usuario de saltar en caso de que este el bloque ocupado.
+      world.setPostion(Integer.parseInt(tValuex.image),Integer.parseInt(tValuey.image));
+      salida = "\nJUMP x: " + tValuex.image+", y: " + tValuey.image + ")";
+      }
+  | tDir = < WALK > "(" ( tValue = < NUM > | tValue = < NAME > ) ("," ( tDir = < DIRECTION > | tDir = < CARDINALDIR > | tDir = < WALKDIR > ))? ")" {
+    salida = "\nWALK v: " + tValue.image + " d: " + tDir.image;
+    // TODO: Completar
+    }
+  | tDir = < LEAP > "(" ( tValue = < NUM > | tValue = < NAME > ) ("," ( tDir = < DIRECTION > | tDir = < CARDINALDIR > | tDir = < WALKDIR > ))? ")" {
+    salida = "\nLEAP v: " + tValue.image + " d: " + tDir.image;
+	// TODO: Completar
+    }
+  | < TURN > "("  ( tDir = < DIRECTION > | tDir = < TURNDIR > ) ")" {
+    salida = "\nTURN d: " + tDir.image;
+	// TODO: Completar
+    }
+  | < TURNTO > "("  tDir = < CARDINALDIR > ")" {
+    salida = "\nTURNTO d: " + tDir.image;
+	// TODO: Completar
+    }
+  | < DROP > "(" ( tValue = < NUM > | tValue = < NAME > ) ")" {
+    salida = "\nDROP v: " + tValue.image;
+    // TODO: Completar
+    }
+  | < GET > "(" ( tValue = < NUM > | tValue = < NAME > ) ")" {
+    salida = "\nGET v: " + tValue.image;
+    // TODO: Completar
+    }
+  | < GRAB > "(" ( tValue = < NUM > | tValue = < NAME > ) ")" {
+    salida = "\nGRAB v: " + tValue.image;
+    // TODO: Completar
+    }
+  | < LETGO > "(" ( tValue = < NUM > | tValue = < NAME > ) ")" {
+    salida = "\nLETGO v: " + tValue.image;
+    // TODO: Completar
+    }
+  | < NOP > "()" { salida = "\nNOP";} ) {
+    sistema.printOutput(salida);
+    }
+}
+
+void FunctionCall(Console sistema):
+{
+  Token Name;
+  Token Value;
+  ArrayList<String> parameters = new ArrayList<String>();
+}
+{
+  Name = < NAME > ( ( "(" ( ( Value = < NUM > | Value = < NAME > ) {parameters.add(Value.image);} ("," ( Value = < NUM > | Value = < NAME > ) {parameters.add(Value.image);})* )+ ")" ) | "()" )
+  {
+    if (!Functions.containsKey(Name.image)) {
+      salida = "\nERROR FUNCION: " + Name.image + " NO DEFINIDA";
+    } else {
+      // TODO: Completar que pasa si existe
+      // Analizar que el numero de parametros coincida, que las los parametros si son variables tengan un valor o sean un integro
+      salida = "\nFUNCION: " + Name.image + " DEFINIDA";
+    }
+    sistema.printOutput(salida);
+  }
+}
+
+void FunctionDefine(Console sistema):
+{
+  Token Name;
+  Token Value;
+  ArrayList<String> parameters = new ArrayList<String>();
+}
+{
+  < DEFPROC > Name = < NAME > ( ( "(" ( Value = < NAME > {parameters.add(Value.image);} ("," Value = < NAME > {parameters.add(Value.image);})* )+ ")" ) | "()" )  "{" Block(sistema) "}" {
+    salida = "\nFUNCION: " + Name.image + " DEFINIDA CON PARAMETROS " + Arrays.toString(parameters.toArray());
+    Functions.put(Name.image, parameters);
+    sistema.printOutput(salida);
+    // TODO: Leer que hace esta parte
+    }
+}
+
+void VariableDefine(Console sistema):
+{
+  Token tVar;
+  Token tValue;
+}
+{
+  < DEFVAR > tVar = < NAME > tValue = < NUM > {
+    salida = "\nVAR " + tVar.image + " = " + tValue.image;
+    Variables.put(tVar.image, Integer.parseInt(tValue.image));
+    sistema.printOutput(salida);
+    // TODO: Leer que hace esta parte
+    }
+}
+
+void Block(Console sistema):
+{}
+{
+  (Command(sistema) | OldCommands(sistema) | FunctionCall(sistema) | CommandStructure(sistema)) (";" Block(sistema))?
+}
+
+void CommandStructure(Console sistema):
+{
+  Token tValue;
+}
+{
+  ( < IF > Condition(sistema) "{" Block(sistema) "}" < ELSE > "{" Block(sistema) "}" {
+    salida = "\nIF ";
+    // TODO: Completar
+    }
+  | < WHILE > Condition(sistema) "{" Block(sistema) "}" {
+	salida = "\nWHILE ";
+	// TODO: Completar 
+    }
+  | < REPEAT > ( tValue = < NUM > | tValue = < NAME > ) < TIMES > "{" Block(sistema) "}" {
+    salida = "\nREPEAT ";
+    // TODO: Completar
+  	}
+  ) { sistema.printOutput(salida); }
+}
+
+void Condition(Console sistema):
+{}
+{
+  ( < FACING > "(" < CARDINALDIR > ")" {
+    salida = "\nFACING ";
+    // TODO: Completar
+  	}
+  | < CAN > "(" Command(sistema) ")" {
+    salida = "\nCAN ";
+    // TODO: Completar
+  	}
+  | < NOT > ":" Condition(sistema) {
+    salida = "\nNot ";
+    // TODO: Completar
+    }       ) { sistema.printOutput(salida); }
+}
+
+// FUNCIONES VIEJAS
+
+void put() :
+{
+	int f=1;	
+}
+{
+	( <CHIPS>    "," f=num() {world.putChips(f); salida = "\nCommand:  Put Chips"; })
+	|  	  ( <BALLOONS>   "," f=num() {world.putBalloons(f); salida = "\nCommand:  Put Balloons";})	 
+
+}
+
+void get() :
+{
+	int f=1;	
+}
+{
+	( <CHIPS>   "," f=num() {world.pickChips(f);salida = "\nCommand:  Pick chips";})
+	|  	  ( <BALLOONS>   "," f=num() {world.grabBalloons(f);salida="\nCommand:  Pick balloons";})	 
+
+}
+
+
+/**
+ * Unsigned decimal number
+ * @return the corresponding value of the string
+ * @error  corresponding value is too large
+ */
+
+int num() throws Error:
+{	
+	int total=1;
+}
+{
+	<NUM>
+	{
+		try 
 		{
-		    try {
-	    			 Thread.sleep(900);
-	    	    } catch (InterruptedException e) {
-	    			        System.err.format("IOException: %s%n", e);
-	    		    }
-	    			 
-			sistema.printOutput(salida);
-			return true;
-		})+
-
-    	| <EOF> {return false;} 
-	}
-
-	void put() :
-	{
-		int f=1;	
-	}
-	{
-		( <CHIPS>    "," f=num() {world.putChips(f); salida = "Command:  Put Chips"; })
-		|  	  ( <BALLOONS>   "," f=num() {world.putBalloons(f); salida = "Command:  Put Balloons";})	 
-
-	}
-
-	void get() :
-	{
-		int f=1;	
-	}
-	{
-		( <CHIPS>   "," f=num() {world.pickChips(f);salida = "Command:  Pick chips";})
-		|  	  ( <BALLOONS>   "," f=num() {world.grabBalloons(f);salida="Command:  Pick balloons";})	 
-
-	}
-
-	
-	
-
-	/**
-	 * Unsigned decimal number
-	 * @return the corresponding value of the string
-	 * @error  corresponding value is too large
-	 */
-
-	int num() throws Error:
-	{	
-		int total=1;
-	}
-	{
-		<NUM>
+			total = Integer.parseInt(token.image);
+		} 
+		catch (NumberFormatException ee) 
 		{
-			try 
-			{
-				total = Integer.parseInt(token.image);
-			} 
-			catch (NumberFormatException ee) 
-			{
-				throw new Error("Number out of bounds: "+token.image+" !!");
-			}
-			return total;
+			throw new Error("\nNumber out of bounds: "+token.image+" !!");
 		}
+		return total;
 	}
+}
 
 	
