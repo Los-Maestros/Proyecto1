@@ -53,37 +53,39 @@ public interface RobotConstants {
   /** RegularExpression Id. */
   int TIMES = 25;
   /** RegularExpression Id. */
-  int FACING = 26;
+  int EQUALS = 26;
   /** RegularExpression Id. */
-  int CAN = 27;
+  int FACING = 27;
   /** RegularExpression Id. */
-  int NOT = 28;
+  int CAN = 28;
   /** RegularExpression Id. */
-  int MOV = 29;
+  int NOT = 29;
   /** RegularExpression Id. */
-  int RIGHT = 30;
+  int MOV = 30;
   /** RegularExpression Id. */
-  int PUT = 31;
+  int RIGHT = 31;
   /** RegularExpression Id. */
-  int PICK = 32;
+  int PUT = 32;
   /** RegularExpression Id. */
-  int POP = 33;
+  int PICK = 33;
   /** RegularExpression Id. */
-  int GO = 34;
+  int POP = 34;
   /** RegularExpression Id. */
-  int HOP = 35;
+  int GO = 35;
   /** RegularExpression Id. */
-  int BALLOONS = 36;
+  int HOP = 36;
   /** RegularExpression Id. */
-  int CHIPS = 37;
+  int BALLOONS = 37;
   /** RegularExpression Id. */
-  int NUM = 38;
+  int CHIPS = 38;
   /** RegularExpression Id. */
-  int DIGIT = 39;
+  int NUM = 39;
   /** RegularExpression Id. */
-  int NAME = 40;
+  int DIGIT = 40;
   /** RegularExpression Id. */
-  int LETTER = 41;
+  int NAME = 41;
+  /** RegularExpression Id. */
+  int LETTER = 42;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -116,11 +118,12 @@ public interface RobotConstants {
     "\"while\"",
     "\"repeat\"",
     "\"times\"",
+    "\"=\"",
     "\"facing\"",
     "\"can\"",
     "\"not\"",
-    "\"Mov\"",
-    "\"RightOld\"",
+    "\"Move\"",
+    "\"Right()\"",
     "\"Put\"",
     "\"Pick\"",
     "\"Pop\"",
@@ -134,11 +137,11 @@ public interface RobotConstants {
     "<LETTER>",
     "\"{\"",
     "\"}\"",
-    "\"()\"",
+    "\";\"",
     "\"(\"",
     "\")\"",
     "\",\"",
-    "\";\"",
+    "\"()\"",
     "\":\"",
   };
 

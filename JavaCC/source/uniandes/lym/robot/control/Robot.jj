@@ -5,7 +5,7 @@ Modificado por: Silvia Takahashi
 Modificado por: Juan Pablo Morales.
 Agregadas producciones para manejar globos
 Modificado por Silvia Takahashi
-
+Final por Daniel Felipe Ortiz
 
  **/
 
@@ -27,29 +27,187 @@ package uniandes.lym.robot.control;
 import uniandes.lym.robot.kernel.*;
 import uniandes.lym.robot.view.Console;
  
-import java.awt.Point;
-import java.io.*;
-import java.util.Vector;
-import java.util.LinkedList;
 import java.util.*;
 import java.util.Arrays;
 
 @SuppressWarnings("serial")
 public class Robot 
 {
-
-
+  
+	public static final int NORTH = 0;
+	public static final int SOUTH = 1;
+	public static final int EAST = 2;
+	public static final int WEST = 3;
+	
 	private RobotWorldDec world;
 	
 	
 	void setWorld(RobotWorld w) {
 		world = (RobotWorldDec) w;	
 	}
+    
 
 	String salida = "";
+	
+	Map<String, ArrayList<String>> Parametros = new HashMap<>();
+	
+	//Guarda todas las variables creadas
 	Map<String, Integer> Variables = new HashMap<>();
-	Map<String, ArrayList<String>> Functions = new HashMap<>();
-	// TODO: Añadir funciones o varibles que neceistes para evaluar el parser!!!
+
+	//Guarda todas las funciones creadas por el usuario
+    Map<String, List<Instrucciones>> Funciones = new HashMap<>();
+    
+	// Guardar el codigo que se va a ejecutar
+    ArrayList <Instrucciones> code = new ArrayList <Instrucciones> () ;
+
+
+	public int revisarVar(String variable) {
+	  int var;
+	  if (Variables.containsKey(variable)) {
+	    var = Variables.get(variable);
+	    }
+	    
+	  else { 
+		  try {
+		    var = Integer.parseInt(variable);
+		    }
+		  catch (NumberFormatException ee) 
+			{throw new Error("\nThe value: "+variable+" needs to be a Inetger");}
+	  }
+	  return var;
+	}
+
+//----------------------------------------------------------------------------------------
+
+private class Instrucciones {
+
+String tipo;
+
+String argx = "0";
+String argy = "0";
+String dir = "";
+
+public Instrucciones(String tipo, String argx) {
+  this.tipo = tipo;
+  this.argx = argx;
+  }
+
+public Instrucciones(String tipo, String argx, String dir) {
+  this.tipo = tipo;
+  this.argx = argx;
+  this.dir = dir.toLowerCase();
+  }
+  
+
+public Instrucciones(String tipo, String argx, String argy, String dir) {
+  this.tipo = tipo;
+  this.argx = argx;
+  this.argy = argy;
+  this.dir = dir;
+  }
+
+
+public void setAtributos(String viejo, String nuevo) {
+	if (argx.equals(viejo)) { this.argx = nuevo;} 
+	else if (argy.equals(viejo)) { this.argy = nuevo;} 
+	else if (dir.equals(viejo)) { this.dir = nuevo;} 
+  }
+  
+public void execute() throws Error {
+  int x = revisarVar(argx);
+  int y = revisarVar(argy);
+  int facing = world.getFacing();
+  switch (tipo) {
+    
+  	case "jump":   world.setPostion(x, y) ; break;
+  	case "walk":   direction(); world.moveForward(x, false); if (dir.equals("xd")) {look(facing);} break;
+	case "leap":  direction(); world.moveForward(x, true);  if (dir.equals("xd")) {look(facing);} break;
+	case "turn":   direction() ; break;
+	case "turnto":   direction(); break;
+	case "drop":  world.putChips(x); break;
+	case "get":  world.pickChips(x); break;
+	case "grab":   world.grabBalloons(x); break;
+	case "letgo":    world.putBalloons(x); break;
+	case "=": Variables.put(dir, x); break;
+
+}
+}
+
+private void direction() throws Error {
+switch (dir) {
+
+	case "right": world.turnRight(); dir = "xd"; break;
+	case "left": world.turnRight(); world.turnRight(); world.turnRight(); dir = "xd"; break;
+	case "around":
+	case "back": world.turnRight(); world.turnRight(); dir = "xd"; break;
+	case "north": look(NORTH); break;
+	case "south": look(SOUTH); break;
+	case "west": look(WEST); break;
+	case "east": look(EAST); break;
+  }
+
+}
+
+private void look(int direccion) {
+	int facing = world.getFacing();
+
+	while (facing != direccion) {
+		world.turnRight();
+		facing = world.getFacing();
+	  }
+  }
+
+
+
+
+public boolean condicionales() {
+
+	boolean resp = false;
+	switch (tipo) {
+		case "facing": int facing = world.getFacing(); if (facing == orientacion()) { resp = true;} else { resp = false;} break;
+		case "can": resp = false; break;
+		// case "not": resp = !condicionales(); break;
+	  }
+	return resp;
+}
+
+private int orientacion() {
+	int resp = -1;
+	switch(dir) {
+	  	case "north": resp = NORTH; break;
+		case "south": resp = SOUTH; break;
+		case "west": resp = WEST; break;
+		case "east": resp = EAST; break;
+	  }
+	return resp;
+  }
+
+//public boolean can() {
+//switch(tipo) {
+//	case "jump":   world.setPostion(x, y) ; break;
+//  	case "walk":   direction(); world.moveForward(x, false); if (dir.equals("xd")) {look(facing);} break;
+//	case "leap":  direction(); world.moveForward(x, true);  if (dir.equals("xd")) {look(facing);} break;
+//	case "turn":   direction() ; break;
+//	case "turnto":   direction(); break;
+//	case "drop":  world.putChips(x); break;
+//	case "get":  world.pickChips(x); break;
+//	case "grab":   world.grabBalloons(x); break;
+//	case "letgo":    world.putBalloons(x); break;
+//  }
+//return true;
+//  }
+
+}
+//----------------------------------------------------------------------------------------
+
+private class Control {
+
+private List<Instrucciones> lista;
+
+
+}
+//----------------------------------------------------------------------------------------
+	
 }
 PARSER_END(Robot)
 
@@ -91,13 +249,14 @@ TOKEN: /* Nombres de Comandos */
   		| < WHILE: "while" >
   		| < REPEAT: "repeat" >
   		| < TIMES: "times" >
+  		| < EQUALS: "=">
   		// Condiciones
   		| < FACING: "facing" >
   		| < CAN: "can" >
   		| < NOT: "not" >
   		// TOKENS VIEJOS
-  		| <MOV:  "Mov">
-		| <RIGHT: "RightOld">
+  		| <MOV:  "Move">
+		| <RIGHT: "Right()">
 		| <PUT: "Put">
 		| <PICK: "Pick">
 		| <POP: "Pop" >
@@ -132,14 +291,23 @@ boolean command(Console sistema):
 	// CAMBIOS AL PARSER PARA NUEVAS FUNCIONES:
 	  VariableDefine(sistema)
 	| FunctionDefine(sistema)
-	| "{" Block(sistema) "}"
+	| "{" Block(sistema, "") "}"
+	| BlockSimple(sistema) ";"
 	)+
 	
 	{
 	    try { Thread.sleep(900);
    		} catch (InterruptedException e) {
-   		  System.err.format("IOException: %s%n", e);
-    	}		 
+   		  System.err.format("InterruptedException: %s%n", e);
+    	}
+
+    	System.out.println("Executing:");
+        System.out.println(code);
+
+    	while (!code.isEmpty()) {
+    		Instrucciones i = code.remove(0);
+    		i.execute();
+}
 		return true;
 	}
 	| <EOF> {return false;} 
@@ -151,7 +319,7 @@ void OldCommands(Console sistema):
   salida=new String();
 }
 {
-    (   <RIGHT> "()" {world.turnRight();salida = "\nCommand: Turnright";}
+    (   <RIGHT> {world.turnRight();salida = "\nCommand: Turnright";}
 	| 	<MOV>  "(" x=num() ")" {world.moveForward(x,false);salida = "\nCommand: Moveforward ";}  
 	|	<HOP>  "(" x=num() ")" {world.moveForward(x,true);salida = "\nCommand:Jumpforward ";}
 	|	<GO>  "(" x=num() "," y=num()")" {world.setPostion(x,y);salida = "\nCommand:GO ";}  
@@ -161,9 +329,9 @@ void OldCommands(Console sistema):
 }
 
 // CAMBIOS AL PARSER PARA NUEVAS FUNCIONES:
-void Command(Console sistema):
+void Command(Console sistema, String esFuncion):
 {
-  Token tDir;
+  Token tDir = null;
   Token tValue;
   Token tValuex;
   Token tValuey; 
@@ -171,67 +339,109 @@ void Command(Console sistema):
 {
   (
     // SIMPLE COMMANDS
-    < JUMP > "(" ( tValuex = < NUM > | tValuex = < NAME > ) "," (tValuey = < NUM > | tValuey = < NAME >) ")" {
-      // TODO: Ejemplo de como funcionarian las demas, tienes que buscar la funcion en el RobotWorld.java e implementarla
-      // aqui, ej world.setPosition sirve como jump y previene al usuario de saltar en caso de que este el bloque ocupado.
-      world.setPostion(Integer.parseInt(tValuex.image),Integer.parseInt(tValuey.image));
+   < JUMP > "(" ( tValuex = < NUM > | tValuex = < NAME > ) "," (tValuey = < NUM > | tValuey = < NAME >) ")" {
+      if (esFuncion.isEmpty()) { 
       salida = "\nJUMP x: " + tValuex.image+", y: " + tValuey.image + ")";
+      code.add(new Instrucciones("jump", tValuex.image, tValuey.image, null)); }
+      else {Funciones.get(esFuncion).add(new Instrucciones("jump", tValuex.image, tValuey.image, null)); }
       }
-  | tDir = < WALK > "(" ( tValue = < NUM > | tValue = < NAME > ) ("," ( tDir = < DIRECTION > | tDir = < CARDINALDIR > | tDir = < WALKDIR > ))? ")" {
-    salida = "\nWALK v: " + tValue.image + " d: " + tDir.image;
-    // TODO: Completar
+  | < WALK > "(" ( tValue = < NUM > | tValue = < NAME > ) ("," ( tDir = < DIRECTION > | tDir = < CARDINALDIR > | tDir = < WALKDIR > ))? ")" {
+	Instrucciones agregar;
+	if (tDir == null) {
+	salida = "\nWALK v: " + tValue.image;
+	agregar = new Instrucciones("walk", tValue.image);}
+	else {
+	salida = "\nWALK v: " + tValue.image + " d: " + tDir.image;
+	agregar = new Instrucciones("walk", tValue.image, tDir.image); }
+
+    if (esFuncion.isEmpty()) { code.add(agregar); }
+    else { Funciones.get(esFuncion).add(agregar); }
     }
-  | tDir = < LEAP > "(" ( tValue = < NUM > | tValue = < NAME > ) ("," ( tDir = < DIRECTION > | tDir = < CARDINALDIR > | tDir = < WALKDIR > ))? ")" {
-    salida = "\nLEAP v: " + tValue.image + " d: " + tDir.image;
-	// TODO: Completar
+  | < LEAP > "(" ( tValue = < NUM > | tValue = < NAME > ) ("," ( tDir = < DIRECTION > | tDir = < CARDINALDIR > | tDir = < WALKDIR > ))? ")" {
+	Instrucciones agregar;
+	if (tDir == null) {
+	salida = "\nLEAP v: " + tValue.image;
+	agregar = new Instrucciones("leap", tValue.image);}
+	else {
+	salida = "\nLEAP v: " + tValue.image + " d: " + tDir.image;
+	agregar = new Instrucciones("leap", tValue.image, tDir.image); }
+
+    if (esFuncion.isEmpty()) { code.add(agregar); }
+    else { Funciones.get(esFuncion).add(agregar); }
     }
   | < TURN > "("  ( tDir = < DIRECTION > | tDir = < TURNDIR > ) ")" {
+	if (esFuncion.isEmpty()) { 
     salida = "\nTURN d: " + tDir.image;
-	// TODO: Completar
+	code.add(new Instrucciones("turn", "0", tDir.image)); }
+	else {Funciones.get(esFuncion).add(new Instrucciones("turn", "0", tDir.image)); }
     }
   | < TURNTO > "("  tDir = < CARDINALDIR > ")" {
+    if (esFuncion.isEmpty()) { 
     salida = "\nTURNTO d: " + tDir.image;
-	// TODO: Completar
+	code.add(new Instrucciones("turnto", "0", tDir.image)); }
+	else {Funciones.get(esFuncion).add(new Instrucciones("turnto", "0", tDir.image)); }
     }
   | < DROP > "(" ( tValue = < NUM > | tValue = < NAME > ) ")" {
+    if (esFuncion.isEmpty()) { 
     salida = "\nDROP v: " + tValue.image;
-    // TODO: Completar
+    code.add(new Instrucciones("drop", tValue.image)); }
+    else { Funciones.get(esFuncion).add(new Instrucciones("drop", tValue.image)); }
     }
   | < GET > "(" ( tValue = < NUM > | tValue = < NAME > ) ")" {
+    if (esFuncion.isEmpty()) { 
     salida = "\nGET v: " + tValue.image;
-    // TODO: Completar
+    code.add(new Instrucciones("get", tValue.image)); }
+    else {Funciones.get(esFuncion).add(new Instrucciones("get", tValue.image)); }
     }
   | < GRAB > "(" ( tValue = < NUM > | tValue = < NAME > ) ")" {
+    if (esFuncion.isEmpty()) { 
     salida = "\nGRAB v: " + tValue.image;
-    // TODO: Completar
+    code.add(new Instrucciones("grab", tValue.image)); }
+    else {Funciones.get(esFuncion).add(new Instrucciones("grab", tValue.image)); }
     }
   | < LETGO > "(" ( tValue = < NUM > | tValue = < NAME > ) ")" {
+    if (esFuncion.isEmpty()) { 
     salida = "\nLETGO v: " + tValue.image;
-    // TODO: Completar
+    code.add(new Instrucciones("letgo", tValue.image)); }
+    else {Funciones.get(esFuncion).add(new Instrucciones("letgo", tValue.image)); }
     }
   | < NOP > "()" { salida = "\nNOP";} ) {
     sistema.printOutput(salida);
     }
 }
 
-void FunctionCall(Console sistema):
+void FunctionCall(Console sistema, String esFuncion):
 {
   Token Name;
   Token Value;
   ArrayList<String> parameters = new ArrayList<String>();
 }
 {
-  Name = < NAME > ( ( "(" ( ( Value = < NUM > | Value = < NAME > ) {parameters.add(Value.image);} ("," ( Value = < NUM > | Value = < NAME > ) {parameters.add(Value.image);})* )+ ")" ) | "()" )
+  Name = < NAME > ( ( ( "(" ( ( Value = < NUM > | Value = < NAME > ) {parameters.add(Value.image);} ("," ( Value = < NUM > | Value = < NAME > ) {parameters.add(Value.image);})* )+ ")" ) | "()" )
   {
-    if (!Functions.containsKey(Name.image)) {
+    if (!Parametros.containsKey(Name.image)) {
       salida = "\nERROR FUNCION: " + Name.image + " NO DEFINIDA";
     } else {
-      // TODO: Completar que pasa si existe
-      // Analizar que el numero de parametros coincida, que las los parametros si son variables tengan un valor o sean un integro
-      salida = "\nFUNCION: " + Name.image + " DEFINIDA";
+      if (Parametros.get(Name.image).size() != parameters.size()) {
+      salida = "\nFUNCION: " + Name.image + " CON PARAMETROS INCOMPLETOS"; }
+      else {
+      for (Instrucciones inst : Funciones.get(Name.image)) { 
+	  for (int i=0; i<parameters.size(); i++) { inst.setAtributos( Parametros.get(Name.image).get(i), parameters.get(i) ); } }
+	  code.addAll(Funciones.get(Name.image));
+        
+      salida = "\nFUNCION: " + Name.image + " DEFINIDA"; }
     }
     sistema.printOutput(salida);
   }
+ |   < EQUALS > Value = < NUM > {
+      if (Variables.containsKey(Name.image)) { 
+		  if (esFuncion.isEmpty()) { 
+	  	  salida = "\nVAR " + Name.image + " = " + Value.image;
+	      code.add(new Instrucciones("=", Value.image, "0", Name.image)); }
+	      else {Funciones.get(esFuncion).add(new Instrucciones("=", Value.image, "0", Name.image)); }}
+	  else { salida = "ERROR NO SE PUEDE ASIGNAR UNA VARIABLE QUE NO EXISTE" ;}
+	  sistema.printOutput(salida);
+      } )
 }
 
 void FunctionDefine(Console sistema):
@@ -239,13 +449,12 @@ void FunctionDefine(Console sistema):
   Token Name;
   Token Value;
   ArrayList<String> parameters = new ArrayList<String>();
+  List<Instrucciones> instru = new ArrayList<Instrucciones>();
 }
 {
-  < DEFPROC > Name = < NAME > ( ( "(" ( Value = < NAME > {parameters.add(Value.image);} ("," Value = < NAME > {parameters.add(Value.image);})* )+ ")" ) | "()" )  "{" Block(sistema) "}" {
+  < DEFPROC > Name = < NAME > { Funciones.put(Name.image, instru); } ( ( "(" ( Value = < NAME > {parameters.add(Value.image);} ("," Value = < NAME > {parameters.add(Value.image);})* )+ ")" ) | "()" ) {Parametros.put(Name.image, parameters);} "{" Block(sistema, Name.image) "}" {
     salida = "\nFUNCION: " + Name.image + " DEFINIDA CON PARAMETROS " + Arrays.toString(parameters.toArray());
-    Functions.put(Name.image, parameters);
     sistema.printOutput(salida);
-    // TODO: Leer que hace esta parte
     }
 }
 
@@ -253,57 +462,64 @@ void VariableDefine(Console sistema):
 {
   Token tVar;
   Token tValue;
+  int var;
 }
 {
-  < DEFVAR > tVar = < NAME > tValue = < NUM > {
+  < DEFVAR > tVar = < NAME > (tValue = < NUM > | tValue = < NAME >){
     salida = "\nVAR " + tVar.image + " = " + tValue.image;
-    Variables.put(tVar.image, Integer.parseInt(tValue.image));
+    var = revisarVar(tValue.image);
+    Variables.put(tVar.image, var);
     sistema.printOutput(salida);
-    // TODO: Leer que hace esta parte
     }
 }
 
-void Block(Console sistema):
+void Block(Console sistema, String esFuncion):
 {}
 {
-  (Command(sistema) | OldCommands(sistema) | FunctionCall(sistema) | CommandStructure(sistema)) (";" Block(sistema))?
+  (Command(sistema, esFuncion) | FunctionCall(sistema, esFuncion) | CommandStructure(sistema, esFuncion)) (";" Block(sistema, esFuncion))?
 }
 
-void CommandStructure(Console sistema):
+void BlockSimple(Console sistema):
+{}
+{
+  (Command(sistema, "") | OldCommands(sistema) | FunctionCall(sistema, ""))
+}
+
+void CommandStructure(Console sistema, String esFuncion):
 {
   Token tValue;
+  boolean condi;
 }
 {
-  ( < IF > Condition(sistema) "{" Block(sistema) "}" < ELSE > "{" Block(sistema) "}" {
+  ( < IF > Condition(sistema, esFuncion) "{" Block(sistema, esFuncion) "}" < ELSE > "{" Block(sistema, esFuncion) "}" {
     salida = "\nIF ";
     // TODO: Completar
     }
-  | < WHILE > Condition(sistema) "{" Block(sistema) "}" {
+  | < WHILE > Condition(sistema, esFuncion) "{" Block(sistema, esFuncion) "}" {
 	salida = "\nWHILE ";
 	// TODO: Completar 
     }
-  | < REPEAT > ( tValue = < NUM > | tValue = < NAME > ) < TIMES > "{" Block(sistema) "}" {
+  | < REPEAT > ( tValue = < NUM > | tValue = < NAME > ) < TIMES > "{" Block(sistema, esFuncion) "}" {
     salida = "\nREPEAT ";
     // TODO: Completar
   	}
   ) { sistema.printOutput(salida); }
 }
 
-void Condition(Console sistema):
+void Condition(Console sistema, String esFuncion):
 {}
 {
   ( < FACING > "(" < CARDINALDIR > ")" {
     salida = "\nFACING ";
     // TODO: Completar
   	}
-  | < CAN > "(" Command(sistema) ")" {
+  | < CAN > "(" Command(sistema, esFuncion) ")" {
     salida = "\nCAN ";
     // TODO: Completar
   	}
-  | < NOT > ":" Condition(sistema) {
+  | < NOT > ":" Condition(sistema, esFuncion) {
     salida = "\nNot ";
-    // TODO: Completar
-    }       ) { sistema.printOutput(salida); }
+    }       ) { sistema.printOutput(salida);}
 }
 
 // FUNCIONES VIEJAS
