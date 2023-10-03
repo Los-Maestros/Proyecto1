@@ -103,11 +103,12 @@ public void execute() throws Error {
   int x = revisarVar(argx);
   int y = revisarVar(argy);
   int facing = world.getFacing();
+  int[] ind;
   switch (tipo) {
 
         case "jump":   world.setPostion(x, y) ; break;
-        case "walk":   direction(); world.moveForward(x, false); if (dir.equals("xd")) {look(facing);} break;
-        case "leap":  direction(); world.moveForward(x, true);  if (dir.equals("xd")) {look(facing);} break;
+        case "walk":   direction(); world.moveForward(x, false); if (argy.equals("-1")) {look(facing);} break;
+        case "leap":  direction(); world.moveForward(x, true);  if (argy.equals("-1")) {look(facing);} break;
         case "turn":   direction() ; break;
         case "turnto":   direction(); break;
         case "drop":  world.putChips(x); break;
@@ -115,7 +116,9 @@ public void execute() throws Error {
         case "grab":   world.grabBalloons(x); break;
         case "letgo":    world.putBalloons(x); break;
         case "=": Variables.put(dir, x); break;
-        case "while": int[] ind = indices("while", "endwhile"); whiles(code.subList(ind[0], ind[1]+1)); break;
+        case "while": ind = indices("while", "endwhile"); whiles(code.subList(ind[0], ind[1]+1)); break;
+        case "if": ind = indices("if", "endif"); ifs(code.subList(ind[0], ind[1]+1)); break;
+        case "repeat": ind = indices("repeat", "endrepeat"); repeats(code.subList(ind[0], ind[1]+1)); break;
 
 }
 }
@@ -123,10 +126,10 @@ public void execute() throws Error {
 private void direction() throws Error {
 switch (dir) {
 
-        case "right": world.turnRight(); dir = "xd"; break;
-        case "left": world.turnRight(); world.turnRight(); world.turnRight(); dir = "xd"; break;
+        case "right": world.turnRight(); argy = "-1"; break;
+        case "left": world.turnRight(); world.turnRight(); world.turnRight(); argy = "-1"; break;
         case "around":
-        case "back": world.turnRight(); world.turnRight(); dir = "xd"; break;
+        case "back": world.turnRight(); world.turnRight(); argy = "-1"; break;
         case "north": look(NORTH); break;
         case "south": look(SOUTH); break;
         case "west": look(WEST); break;
@@ -172,28 +175,49 @@ private int orientacion() {
 
 public void whiles(List<Instrucciones> lista) { //TODO esta mal pensado solo sirve en algunos casos
         int i = 0;
+
         while (!lista.get(i).getTipo().equals("condicional")) { i++;}
         int j = i + 1;
-        while (lista.get(i+1).condicionales()) {
+        while (lista.get(0).condicionales()) {
                 while (!lista.get(j).getTipo().equals("endwhile")) {
                     lista.get(j).execute();
                     j++;
                   }
-                j = i;
+                j = i+1;
           }
         lista.subList(0, j+1).clear();
   }
 
-public void ifs() { //TODO esta mal pensado e incompleto
+public void ifs(List<Instrucciones> lista) { //TODO esta mal pensado e incompleto
         int i = 0;
-        Instrucciones condicional = code.remove(0);
-        if (condicional.condicionales()) {
-          while (!code.get(i).getTipo().equals("else")) {
-                    code.get(i).execute();
+        while (!lista.get(i).getTipo().equals("condicional")) { i++;}
+        if (lista.get(0).condicionales()) {
+          while (!lista.get(i).getTipo().equals("else")) {
+                    lista.get(i).execute();
                     i++;
                   }
+          while (!lista.get(i).getTipo().equals("endif")) { i++;}
         }
+        else {
+                while (!lista.get(i).getTipo().equals("else")) { i++;}
+                while (!lista.get(i).getTipo().equals("endif")) {
+            lista.get(i).execute();
+            i++;
+          }
+          }
+          lista.subList(0, i+1).clear();
   }
+
+public void repeats(List<Instrucciones> lista) {
+        int i = 0;
+        for (int j = 0;j < revisarVar(argx); j++ ) {
+        while (!lista.get(i).getTipo().equals("endrepeat")) {
+                    lista.get(i).execute();
+                    i++;
+                  } }
+                  lista.subList(0, i+1).clear();
+        }
+
 
  public int[] indices(String inicio, String finals) {
     int [] resp = {0, 0};
@@ -217,7 +241,7 @@ public void ifs() { //TODO esta mal pensado e incompleto
 
    public int encontrar() {
         int resp = 0;
-        while (code.get(0) == this) { resp++; }
+        while (code.get(resp) == this) { resp++; }
         return resp; }
 
 public boolean can(String t) {
@@ -346,7 +370,7 @@ System.out.println("Executing:");
                   System.err.format("InterruptedException: %s%n", e);
         }
 
-                // for (Instrucciones in : code) { System.out.println( in.getTipo() );}
+                System.out.println( code );
 
         while (!code.isEmpty()) {
                 Instrucciones i = code.remove(0);
@@ -1017,6 +1041,8 @@ salida = "\nVAR " + tVar.image + " = " + tValue.image;
 if (esFuncion.isEmpty()) { salida = "\nIF "; code.add(new Instrucciones("if")); }
         else {Funciones.get(esFuncion).add(new Instrucciones("if")); }
       Condition(sistema, esFuncion);
+if (esFuncion.isEmpty()) {code.add(new Instrucciones("condicional")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("condicional")); }
       jj_consume_token(43);
       Block(sistema, esFuncion);
       jj_consume_token(44);
