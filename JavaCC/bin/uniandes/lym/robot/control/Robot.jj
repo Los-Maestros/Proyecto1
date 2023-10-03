@@ -196,7 +196,7 @@ private int orientacion() {
   }
 
 
-public void whiles(List<Instrucciones> lista) { //TODO esta mal pensado solo sirve en algunos casos
+public void whiles(List<Instrucciones> lista) { //TODO
 	int i = 0;
 	
   	while (!lista.get(i).getTipo().equals("condicional")) { i++;}
@@ -211,7 +211,7 @@ public void whiles(List<Instrucciones> lista) { //TODO esta mal pensado solo sir
 	lista.subList(0, j+1).clear();
   }
 
-public void ifs(List<Instrucciones> lista) { //TODO esta mal pensado e incompleto
+public void ifs(List<Instrucciones> lista) { //TODO
 	int i = 0;
 	while (!lista.get(i).getTipo().equals("condicional")) { i++;}
 	if (lista.get(0).condicionales()) {
@@ -274,8 +274,8 @@ int y = revisarVar(argy);
 Point p = world.getPosition();
 switch(t) {
 	case "jump": resp = world.isBlocked(new Point(x, y)) ; break;
-  	case "walk":  resp = true; break; //TODO 
-	case "leap":  resp = true; break; //TODO
+  	case "walk":  resp = world.blockedInRange((int) p.getX(), (int) p.getY(), x, orientacion()); break; //TODO 
+	case "leap":  resp = world.blockedInRange((int) p.getX(), (int) p.getY(), x, orientacion()); break; //TODO
 	case "turn":   resp = true ; break;
 	case "turnto":   resp = true; break;
 	case "drop":  resp = x <= world.getMyChips(); break;
@@ -283,6 +283,7 @@ switch(t) {
 	case "grab":   resp = x <= world.countBalloons(); break;
 	case "letgo":    resp = x <= world.getMyBalloons(); break;
   }
+  System.out.println(resp);
 return resp;
   }
 
