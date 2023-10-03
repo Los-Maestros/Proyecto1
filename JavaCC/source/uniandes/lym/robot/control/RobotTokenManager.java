@@ -5,6 +5,7 @@ import uniandes.lym.robot.kernel.*;
 import uniandes.lym.robot.view.Console;
 import java.util.*;
 import java.util.Arrays;
+import java.awt.Point;
 
 /** Token Manager. */
 @SuppressWarnings ("unused")

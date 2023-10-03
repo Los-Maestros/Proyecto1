@@ -7,6 +7,7 @@ import uniandes.lym.robot.view.Console;
 
 import java.util.*;
 import java.util.Arrays;
+import java.awt.Point;
 
 @SuppressWarnings("serial")
 public class Robot implements RobotConstants {
@@ -54,6 +55,7 @@ public class Robot implements RobotConstants {
           return var;
         }
 
+
 //----------------------------------------------------------------------------------------
 
 private class Instrucciones {
@@ -63,6 +65,10 @@ String tipo;
 String argx = "0";
 String argy = "0";
 String dir = "";
+
+public Instrucciones(String tipo) {
+  this.tipo = tipo;
+  }
 
 public Instrucciones(String tipo, String argx) {
   this.tipo = tipo;
@@ -83,6 +89,9 @@ public Instrucciones(String tipo, String argx, String argy, String dir) {
   this.dir = dir;
   }
 
+public String getTipo() {
+        return tipo;
+  }
 
 public void setAtributos(String viejo, String nuevo) {
         if (argx.equals(viejo)) { this.argx = nuevo;}
@@ -106,6 +115,7 @@ public void execute() throws Error {
         case "grab":   world.grabBalloons(x); break;
         case "letgo":    world.putBalloons(x); break;
         case "=": Variables.put(dir, x); break;
+        case "while": int[] ind = indices("while", "endwhile"); whiles(code.subList(ind[0], ind[1]++)); break;
 
 }
 }
@@ -138,12 +148,12 @@ private void look(int direccion) {
 
 
 public boolean condicionales() {
-
+        int i = encontrar();
         boolean resp = false;
         switch (tipo) {
                 case "facing": int facing = world.getFacing(); if (facing == orientacion()) { resp = true;} else { resp = false;} break;
-                case "can": resp = false; break;
-                // case "not": resp = !condicionales(); break;
+                case "can": resp = can(code.get(i++).getTipo());  break;
+                case "not": resp = !code.get(i++).condicionales(); break;
           }
         return resp;
 }
@@ -159,28 +169,74 @@ private int orientacion() {
         return resp;
   }
 
-//public boolean can() {
-//switch(tipo) {
-//	case "jump":   world.setPostion(x, y) ; break;
-//  	case "walk":   direction(); world.moveForward(x, false); if (dir.equals("xd")) {look(facing);} break;
-//	case "leap":  direction(); world.moveForward(x, true);  if (dir.equals("xd")) {look(facing);} break;
-//	case "turn":   direction() ; break;
-//	case "turnto":   direction(); break;
-//	case "drop":  world.putChips(x); break;
-//	case "get":  world.pickChips(x); break;
-//	case "grab":   world.grabBalloons(x); break;
-//	case "letgo":    world.putBalloons(x); break;
-//  }
-//return true;
-//  }
 
-}
-//----------------------------------------------------------------------------------------
+public void whiles(List<Instrucciones> lista) { //TODO esta mal pensado solo sirve en algunos casos
+        int i = 0;
+        Instrucciones condicional = lista.remove(0);
+        while (condicional.condicionales()) {
+                while (!lista.get(i).getTipo().equals("endwhile")) {
+                    lista.get(i).execute();
+                    i++;
+                  }
+                i = 0;
+          }
+        lista.subList(0, i++).clear();
+  }
 
-private class Control {
+public void ifs() { //TODO esta mal pensado
+        int i = 0;
+        Instrucciones condicional = code.remove(0);
+        if (condicional.condicionales()) {
+          while (!code.get(i).getTipo().equals("else")) {
+                    code.get(i).execute();
+                    i++;
+                  }
+        }
+  }
 
-private List<Instrucciones> lista;
+ public int[] indices(String inicio, String finals) {
+    int [] resp = {0, 0};
+        while (code.get(resp[0]) == this) { resp[0] ++; }
+        int cont = 0;
 
+    for (resp[1] = resp[0] + 1; resp[1] < code.size(); resp[1]++) {
+        String j = code.get(resp[1]).getTipo();
+        if (j.equals(inicio)) {
+            cont++;
+        } else if (j.equals(finals)) {
+            if (cont == 0) {
+                break;
+            }
+            cont--;
+        }
+    }
+    return resp;
+
+   }
+
+   public int encontrar() {
+        int resp = 0;
+        while (code.get(0) == this) { resp++; }
+        return resp; }
+
+public boolean can(String t) {
+boolean resp = false;
+int x = revisarVar(argx);
+int y = revisarVar(argy);
+Point p = world.getPosition();
+switch(t) {
+        case "jump": resp = world.isBlocked(new Point(x, y)) ; break;
+        case "walk":  resp = true; break; //TODO 
+        case "leap":  resp = true; break; //TODO
+        case "turn":   resp = true ; break;
+        case "turnto":   resp = true; break;
+        case "drop":  resp = x <= world.getMyChips(); break;
+        case "get":  resp = world.chipExists() && x <= world.chipsToPick(); break;
+        case "grab":   resp = x <= world.countBalloons(); break;
+        case "letgo":    resp = x <= world.getMyBalloons(); break;
+  }
+return resp;
+  }
 
 }
 
@@ -282,12 +338,13 @@ private List<Instrucciones> lista;
           break label_1;
         }
       }
-try { Thread.sleep(900);
+System.out.println("Executing:");
+
+            try { Thread.sleep(900);
                 } catch (InterruptedException e) {
                   System.err.format("InterruptedException: %s%n", e);
         }
 
-        System.out.println("Executing:");
         System.out.println(code);
 
         while (!code.isEmpty()) {
@@ -953,32 +1010,35 @@ salida = "\nVAR " + tVar.image + " = " + tValue.image;
 }
 
   final public void CommandStructure(Console sistema, String esFuncion) throws ParseException {Token tValue;
-  boolean condi;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case IF:{
       jj_consume_token(IF);
+if (esFuncion.isEmpty()) { salida = "\nIF "; code.add(new Instrucciones("if")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("if")); }
       Condition(sistema, esFuncion);
       jj_consume_token(43);
       Block(sistema, esFuncion);
       jj_consume_token(44);
       jj_consume_token(ELSE);
+if (esFuncion.isEmpty()) { code.add(new Instrucciones("else")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("else")); }
       jj_consume_token(43);
       Block(sistema, esFuncion);
       jj_consume_token(44);
-salida = "\nIF ";
-    // TODO: Completar
-
+if (esFuncion.isEmpty()) { code.add(new Instrucciones("endif")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("endif")); }
       break;
       }
     case WHILE:{
       jj_consume_token(WHILE);
+if (esFuncion.isEmpty()) { salida = "\nWHILE "; code.add(new Instrucciones("while")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("while")); }
       Condition(sistema, esFuncion);
       jj_consume_token(43);
       Block(sistema, esFuncion);
       jj_consume_token(44);
-salida = "\nWHILE ";
-        // TODO: Completar 
-
+if (esFuncion.isEmpty()) {code.add(new Instrucciones("endwhile")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("endwhile")); }
       break;
       }
     case REPEAT:{
@@ -998,12 +1058,13 @@ salida = "\nWHILE ";
         throw new ParseException();
       }
       jj_consume_token(TIMES);
+if (esFuncion.isEmpty()) { salida = "\nREPEAT "; code.add(new Instrucciones("repeat", tValue.image)); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("repeat", tValue.image)); }
       jj_consume_token(43);
       Block(sistema, esFuncion);
       jj_consume_token(44);
-salida = "\nREPEAT ";
-    // TODO: Completar
-
+if (esFuncion.isEmpty()) { code.add(new Instrucciones("endrepeat")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("endrepeat")); }
       break;
       }
     default:
@@ -1014,16 +1075,15 @@ salida = "\nREPEAT ";
 sistema.printOutput(salida);
 }
 
-  final public void Condition(Console sistema, String esFuncion) throws ParseException {
+  final public void Condition(Console sistema, String esFuncion) throws ParseException {Token type;
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case FACING:{
       jj_consume_token(FACING);
       jj_consume_token(46);
-      jj_consume_token(CARDINALDIR);
+      type = jj_consume_token(CARDINALDIR);
       jj_consume_token(47);
-salida = "\nFACING ";
-    // TODO: Completar
-
+{if (esFuncion.isEmpty()) { salida = "\nFACING "; code.add(new Instrucciones("facing", "0", type.image)); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("facing", "0", type.image)); } }
       break;
       }
     case CAN:{
@@ -1031,16 +1091,16 @@ salida = "\nFACING ";
       jj_consume_token(46);
       Command(sistema, esFuncion);
       jj_consume_token(47);
-salida = "\nCAN ";
-    // TODO: Completar
-
+{if (esFuncion.isEmpty()) { salida = "\nCAN "; code.add(new Instrucciones("can")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("facing")); } }
       break;
       }
     case NOT:{
       jj_consume_token(NOT);
       jj_consume_token(50);
       Condition(sistema, esFuncion);
-salida = "\nNot ";
+{if (esFuncion.isEmpty()) { salida = "\nNot "; code.add(new Instrucciones("not")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("not")); } }
       break;
       }
     default:
@@ -1311,5 +1371,6 @@ try
   }
 
 //----------------------------------------------------------------------------------------
+
 
 }
