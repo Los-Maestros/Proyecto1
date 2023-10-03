@@ -115,7 +115,7 @@ public void execute() throws Error {
         case "grab":   world.grabBalloons(x); break;
         case "letgo":    world.putBalloons(x); break;
         case "=": Variables.put(dir, x); break;
-        case "while": int[] ind = indices("while", "endwhile"); whiles(code.subList(ind[0], ind[1]++)); break;
+        case "while": int[] ind = indices("while", "endwhile"); whiles(code.subList(ind[0], ind[1]+1)); break;
 
 }
 }
@@ -172,18 +172,19 @@ private int orientacion() {
 
 public void whiles(List<Instrucciones> lista) { //TODO esta mal pensado solo sirve en algunos casos
         int i = 0;
-        Instrucciones condicional = lista.remove(0);
-        while (condicional.condicionales()) {
-                while (!lista.get(i).getTipo().equals("endwhile")) {
-                    lista.get(i).execute();
-                    i++;
+        while (!lista.get(i).getTipo().equals("condicional")) { i++;}
+        int j = i + 1;
+        while (lista.get(i+1).condicionales()) {
+                while (!lista.get(j).getTipo().equals("endwhile")) {
+                    lista.get(j).execute();
+                    j++;
                   }
-                i = 0;
+                j = i;
           }
-        lista.subList(0, i++).clear();
+        lista.subList(0, j+1).clear();
   }
 
-public void ifs() { //TODO esta mal pensado
+public void ifs() { //TODO esta mal pensado e incompleto
         int i = 0;
         Instrucciones condicional = code.remove(0);
         if (condicional.condicionales()) {
@@ -345,7 +346,7 @@ System.out.println("Executing:");
                   System.err.format("InterruptedException: %s%n", e);
         }
 
-        System.out.println(code);
+                // for (Instrucciones in : code) { System.out.println( in.getTipo() );}
 
         while (!code.isEmpty()) {
                 Instrucciones i = code.remove(0);
@@ -1034,6 +1035,8 @@ if (esFuncion.isEmpty()) { code.add(new Instrucciones("endif")); }
 if (esFuncion.isEmpty()) { salida = "\nWHILE "; code.add(new Instrucciones("while")); }
         else {Funciones.get(esFuncion).add(new Instrucciones("while")); }
       Condition(sistema, esFuncion);
+if (esFuncion.isEmpty()) {code.add(new Instrucciones("condicional")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("condicional")); }
       jj_consume_token(43);
       Block(sistema, esFuncion);
       jj_consume_token(44);
@@ -1088,19 +1091,19 @@ sistema.printOutput(salida);
       }
     case CAN:{
       jj_consume_token(CAN);
+{if (esFuncion.isEmpty()) { salida = "\nCAN "; code.add(new Instrucciones("can")); }
+        else {Funciones.get(esFuncion).add(new Instrucciones("can")); } }
       jj_consume_token(46);
       Command(sistema, esFuncion);
       jj_consume_token(47);
-{if (esFuncion.isEmpty()) { salida = "\nCAN "; code.add(new Instrucciones("can")); }
-        else {Funciones.get(esFuncion).add(new Instrucciones("facing")); } }
       break;
       }
     case NOT:{
       jj_consume_token(NOT);
       jj_consume_token(50);
-      Condition(sistema, esFuncion);
 {if (esFuncion.isEmpty()) { salida = "\nNot "; code.add(new Instrucciones("not")); }
         else {Funciones.get(esFuncion).add(new Instrucciones("not")); } }
+      Condition(sistema, esFuncion);
       break;
       }
     default:

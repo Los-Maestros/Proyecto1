@@ -138,7 +138,7 @@ public void execute() throws Error {
 	case "grab":   world.grabBalloons(x); break;
 	case "letgo":    world.putBalloons(x); break;
 	case "=": Variables.put(dir, x); break;
-	case "while": int[] ind = indices("while", "endwhile"); whiles(code.subList(ind[0], ind[1]++)); break;
+	case "while": int[] ind = indices("while", "endwhile"); whiles(code.subList(ind[0], ind[1]+1)); break;
 
 }
 }
@@ -194,19 +194,20 @@ private int orientacion() {
 
 
 public void whiles(List<Instrucciones> lista) { //TODO esta mal pensado solo sirve en algunos casos
-  	int i = 0;
-	Instrucciones condicional = lista.remove(0);
-	while (condicional.condicionales()) {
-		while (!lista.get(i).getTipo().equals("endwhile")) {
-		    lista.get(i).execute();
-		    i++;
+	int i = 0;
+  	while (!lista.get(i).getTipo().equals("condicional")) { i++;}
+  	int j = i + 1;
+	while (lista.get(i+1).condicionales()) {
+		while (!lista.get(j).getTipo().equals("endwhile")) {
+		    lista.get(j).execute();
+		    j++;
 		  }
-		i = 0;
+		j = i;
 	  }
-	lista.subList(0, i++).clear();
+	lista.subList(0, j+1).clear();
   }
 
-public void ifs() { //TODO esta mal pensado
+public void ifs() { //TODO esta mal pensado e incompleto
 	int i = 0;
 	Instrucciones condicional = code.remove(0);
 	if (condicional.condicionales()) {
@@ -360,7 +361,7 @@ boolean command(Console sistema):
    		  System.err.format("InterruptedException: %s%n", e);
     	}
 
-        System.out.println(code);
+		// for (Instrucciones in : code) { System.out.println( in.getTipo() );}
 
     	while (!code.isEmpty()) {
     		Instrucciones i = code.remove(0);
@@ -564,7 +565,8 @@ void CommandStructure(Console sistema, String esFuncion):
 	{if (esFuncion.isEmpty()) { salida = "\nWHILE "; code.add(new Instrucciones("while")); }
 	else {Funciones.get(esFuncion).add(new Instrucciones("while")); } }
 
-	Condition(sistema, esFuncion) "{" Block(sistema, esFuncion) "}"
+	Condition(sistema, esFuncion) 	{if (esFuncion.isEmpty()) {code.add(new Instrucciones("condicional")); }
+	else {Funciones.get(esFuncion).add(new Instrucciones("condicional")); } } "{" Block(sistema, esFuncion) "}"
 	{if (esFuncion.isEmpty()) {code.add(new Instrucciones("endwhile")); }
 	else {Funciones.get(esFuncion).add(new Instrucciones("endwhile")); } }
 
@@ -585,14 +587,16 @@ void Condition(Console sistema, String esFuncion):
     {if (esFuncion.isEmpty()) { salida = "\nFACING "; code.add(new Instrucciones("facing", "0", type.image)); }
 	else {Funciones.get(esFuncion).add(new Instrucciones("facing", "0", type.image)); } }
   	}
-  | < CAN > "(" Command(sistema, esFuncion) ")" {
-    {if (esFuncion.isEmpty()) { salida = "\nCAN "; code.add(new Instrucciones("can")); }
-	else {Funciones.get(esFuncion).add(new Instrucciones("facing")); } }
-  	}
-  | < NOT > ":" Condition(sistema, esFuncion) {
-    {if (esFuncion.isEmpty()) { salida = "\nNot "; code.add(new Instrucciones("not")); }
-	else {Funciones.get(esFuncion).add(new Instrucciones("not")); } }
-    }       ) { sistema.printOutput(salida);}
+  | < CAN >
+    { {if (esFuncion.isEmpty()) { salida = "\nCAN "; code.add(new Instrucciones("can")); }
+	else {Funciones.get(esFuncion).add(new Instrucciones("can")); } } }
+	"(" Command(sistema, esFuncion) ")"
+	
+  | < NOT > ":"
+    { {if (esFuncion.isEmpty()) { salida = "\nNot "; code.add(new Instrucciones("not")); }
+	else {Funciones.get(esFuncion).add(new Instrucciones("not")); } } }
+	Condition(sistema, esFuncion)
+	  ) { sistema.printOutput(salida);}
 }
 
 // FUNCIONES VIEJAS
