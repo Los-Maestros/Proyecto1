@@ -173,7 +173,7 @@ private int orientacion() {
   }
 
 
-public void whiles(List<Instrucciones> lista) { //TODO
+public void whiles(List<Instrucciones> lista) {
         int i = 0;
 
         while (!lista.get(i).getTipo().equals("condicional")) { i++;}
@@ -188,7 +188,7 @@ public void whiles(List<Instrucciones> lista) { //TODO
         lista.subList(0, j+1).clear();
   }
 
-public void ifs(List<Instrucciones> lista) { //TODO
+public void ifs(List<Instrucciones> lista) {
         int i = 0;
         while (!lista.get(i).getTipo().equals("condicional")) { i++;}
         if (lista.get(0).condicionales()) {
@@ -251,8 +251,8 @@ int y = revisarVar(argy);
 Point p = world.getPosition();
 switch(t) {
         case "jump": resp = world.isBlocked(new Point(x, y)) ; break;
-        case "walk":  resp = world.blockedInRange((int) p.getX(), (int) p.getY(), x, orientacion()); break; //TODO 
-        case "leap":  resp = world.blockedInRange((int) p.getX(), (int) p.getY(), x, orientacion()); break; //TODO
+        case "walk":  resp = world.blockedInRange((int) p.getX(), (int) p.getY(), x, orientacion()); break;
+        case "leap":  resp = world.blockedInRange((int) p.getX(), (int) p.getY(), x, orientacion()); break;
         case "turn":   resp = true ; break;
         case "turnto":   resp = true; break;
         case "drop":  resp = x <= world.getMyChips(); break;
